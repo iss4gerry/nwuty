@@ -26,9 +26,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${sans.variable} ${serif.variable} h-full antialiased`}
+      className={`${sans.variable} ${serif.variable} min-h-full antialiased`}
     >
-      <body className="app-backdrop flex min-h-full flex-col">
+      <body className="app-backdrop flex min-h-full min-h-dvh flex-col">
         <Providers>{children}</Providers>
       </body>
     </html>

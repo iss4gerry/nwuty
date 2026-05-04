@@ -22,7 +22,14 @@
   --color-foreground: var(--app-ink);
 }
 
+html {
+  min-height: 100%;
+  background-color: var(--app-canvas);
+}
+
 body {
+  min-height: 100%;
+  min-height: 100dvh;
   background: var(--app-canvas);
   color: var(--app-ink);
   font-family: var(--font-sans);
@@ -31,12 +38,15 @@ body {
 .app-backdrop {
   position: relative;
   min-height: 100%;
+  min-height: 100dvh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background-color: var(--app-canvas);
   background-image:
     radial-gradient(ellipse 100% 70% at 50% -10%, var(--app-glow), transparent 50%),
     radial-gradient(ellipse 50% 40% at 100% 30%, rgba(116, 69, 119, 0.08), transparent),
     radial-gradient(ellipse 45% 35% at 0% 85%, rgba(92, 111, 106, 0.08), transparent),
     linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, transparent 38%);
+  background-attachment: fixed, fixed, fixed, fixed;
 }
 
 .app-backdrop::before {
