@@ -13,7 +13,7 @@ import { resolveAgentCaption } from "@/lib/agent-message";
 import gsap from "gsap";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 type PreviewState = {
   analysis: MealAnalysis;
@@ -55,27 +55,39 @@ export function DashboardClient({ initial }: { initial: TodayData }) {
     data,
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = revealRef.current;
     if (!root) return;
     const sections = root.querySelectorAll<HTMLElement>("[data-dash-section]");
-    gsap.from(sections, {
-      opacity: 0,
-      y: 26,
-      duration: 0.62,
-      stagger: 0.1,
-      ease: "power2.out",
-    });
+    if (sections.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        sections,
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          stagger: 0.08,
+          ease: "power2.out",
+          overwrite: "auto",
+        },
+      );
+    }, root);
+    return () => ctx.revert();
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = captionRef.current;
     if (!el) return;
-    gsap.fromTo(
-      el,
-      { opacity: 0.25, y: 5 },
-      { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
-    );
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        el,
+        { opacity: 0.3, y: 4 },
+        { opacity: 1, y: 0, duration: 0.35, ease: "power2.out", overwrite: "auto" },
+      );
+    }, el);
+    return () => ctx.revert();
   }, [agentCaption]);
 
   const handleImageSelected = async (file: File | null) => {

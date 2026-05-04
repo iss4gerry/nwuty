@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { getTodaySnapshot } from "@/lib/today";
+import { getTodaySnapshot, todayDataClientKey } from "@/lib/today";
 import { DashboardClient } from "./dashboard-client";
 
 export const dynamic = "force-dynamic";
@@ -30,5 +30,7 @@ export default async function DashboardPage() {
     redirect("/onboarding");
   }
 
-  return <DashboardClient initial={initial} />;
+  return (
+    <DashboardClient key={todayDataClientKey(initial)} initial={initial} />
+  );
 }

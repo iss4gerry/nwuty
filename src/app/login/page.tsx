@@ -28,7 +28,7 @@ export default function LoginPage() {
         return;
       }
       router.replace("/dashboard");
-      router.refresh();
+      queueMicrotask(() => router.refresh());
     } finally {
       setBusy(false);
     }

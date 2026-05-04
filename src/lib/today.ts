@@ -77,3 +77,14 @@ export async function getTodaySnapshot(userId: string) {
 
 export type TodaySnapshot = Awaited<ReturnType<typeof getTodaySnapshot>>;
 export type TodayData = NonNullable<TodaySnapshot>;
+
+/** Remount client when server snapshot meaningfully changes (avoids stale useState after navigation). */
+export function todayDataClientKey(d: TodayData): string {
+  return [
+    d.localDate,
+    d.logs.map((l) => l.id).join(","),
+    Math.round(d.consumed.calories),
+    d.targets.calories,
+    d.targets.proteinG,
+  ].join("|");
+}

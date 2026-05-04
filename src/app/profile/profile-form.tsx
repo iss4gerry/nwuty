@@ -53,7 +53,7 @@ export function ProfileForm({ email, name: initialName, profile }: Props) {
 			const j = await res.json();
 			if (!res.ok) throw new Error(j.error ?? 'Could not save');
 			router.replace('/dashboard');
-			router.refresh();
+			queueMicrotask(() => router.refresh());
 		} catch (e) {
 			setErr(e instanceof Error ? e.message : 'Something went wrong');
 		} finally {

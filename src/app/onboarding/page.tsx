@@ -41,7 +41,7 @@ export default function OnboardingPage() {
       const j = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Could not save");
       router.replace("/dashboard");
-      router.refresh();
+      queueMicrotask(() => router.refresh());
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -91,7 +91,7 @@ export default function OnboardingPage() {
         </label>
 
         <label className="block text-sm text-[var(--app-muted)]">
-          Sex
+          Gender
           <select
             className="input-field mt-1.5"
             value={gender}
