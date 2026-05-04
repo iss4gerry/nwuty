@@ -251,6 +251,15 @@ export function DashboardClient({ initial }: { initial: TodayData }) {
             >
               {agentCaption}
             </p>
+            {!busy && !preview ? (
+              <p className="mt-4 border-t border-[var(--app-line)] pt-4 text-xs leading-relaxed text-[var(--app-muted)] text-pretty">
+                <span className="font-semibold text-[var(--app-accent)]">
+                  This week
+                </span>
+                <span className="text-[var(--app-muted)]"> · </span>
+                {data.briefInsight}
+              </p>
+            ) : null}
           </blockquote>
           <div className="flex gap-6 text-sm text-[var(--app-muted)]">
             <Link

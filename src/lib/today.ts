@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
-import { getLocalDateString } from "@/lib/dates";
+import { computeBriefInsight } from "@/lib/brief-insight";
+import { getLocalDateString, lastNYmdDays } from "@/lib/dates";
+import type { ConsumedTotals, DailyNutritionTargets } from "@/lib/nutrition";
 import {
   computeDailyTargets,
   expressionFromRemainder,
@@ -27,6 +29,63 @@ function logToConsumed(l: {
   };
 }
 
+const emptyConsumed = (): ConsumedTotals & { logCount: number } => ({
+  calories: 0,
+  proteinG: 0,
+  carbsG: 0,
+  fatG: 0,
+  sugarG: 0,
+  fiberG: 0,
+  sodiumMg: 0,
+  logCount: 0,
+});
+
+async function loadBriefInsight(
+  userId: string,
+  localDate: string,
+  targets: DailyNutritionTargets,
+) {
+  const range = lastNYmdDays(localDate, 7);
+  const logs = await prisma.foodLog.findMany({
+    where: { userId, localDate: { in: range } },
+    select: {
+      localDate: true,
+      calories: true,
+      proteinG: true,
+      carbsG: true,
+      fatG: true,
+      sugarG: true,
+      fiberG: true,
+      sodiumMg: true,
+    },
+  });
+
+  const byDate = new Map<string, ConsumedTotals & { logCount: number }>();
+  for (const d of range) {
+    byDate.set(d, emptyConsumed());
+  }
+  for (const log of logs) {
+    const e = byDate.get(log.localDate);
+    if (!e) continue;
+    e.calories += log.calories;
+    e.proteinG += log.proteinG;
+    e.carbsG += log.carbsG;
+    e.fatG += log.fatG;
+    e.sugarG += log.sugarG;
+    e.fiberG += log.fiberG;
+    e.sodiumMg += log.sodiumMg;
+    e.logCount += 1;
+  }
+
+  const perDay = range.map((d) => {
+    const row = byDate.get(d)!;
+    const { logCount, ...consumed } = row;
+    return { localDate: d, consumed, logCount };
+  });
+
+  return computeBriefInsight({ targets, perDay });
+}
+
 export async function getTodaySnapshot(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -52,6 +111,8 @@ export async function getTodaySnapshot(userId: string) {
   const remainder = remainingFromTargets(targets, consumed);
   const expression = expressionFromRemainder(targets, remainder);
 
+  const briefInsight = await loadBriefInsight(userId, localDate, targets);
+
   return {
     timezone: user.timezone,
     localDate,
@@ -59,6 +120,7 @@ export async function getTodaySnapshot(userId: string) {
     consumed,
     remainder,
     expression,
+    briefInsight,
     logs: logs.map((l) => ({
       id: l.id,
       name: l.name,
