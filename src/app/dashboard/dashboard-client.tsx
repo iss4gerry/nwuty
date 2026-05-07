@@ -7,6 +7,7 @@ import type {
   ConsumedTotals,
   DailyNutritionTargets,
 } from "@/lib/nutrition";
+import type { SuggestionCard } from "@/lib/suggestions";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { NutrientMeter } from "@/components/NutrientMeter";
 import { resolveAgentCaption } from "@/lib/agent-message";
@@ -14,6 +15,21 @@ import gsap from "gsap";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+
+import { 
+  Zap, 
+  Beef, 
+  Wheat, 
+  Droplets, 
+  Candy, 
+  Leaf, 
+  Salad,
+  LogOut,
+  User as UserIcon,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
 
 type PreviewState = {
   analysis: MealAnalysis;
@@ -23,37 +39,73 @@ type PreviewState = {
   };
 };
 
+function NutrientIcon({ text }: { text: string }) {
+  const lower = text.toLowerCase();
+  
+  if (lower.includes("protein")) return <Beef className="mr-1.5 h-3.5 w-3.5 text-orange-600" />;
+  if (lower.includes("carb")) return <Wheat className="mr-1.5 h-3.5 w-3.5 text-blue-600" />;
+  if (lower.includes("fat")) return <Droplets className="mr-1.5 h-3.5 w-3.5 text-yellow-600" />;
+  if (lower.includes("sugar")) return <Candy className="mr-1.5 h-3.5 w-3.5 text-pink-600" />;
+  if (lower.includes("fiber")) return <Salad className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />;
+  if (lower.includes("sodium")) return <Leaf className="mr-1.5 h-3.5 w-3.5 text-purple-600" />;
+  
+  return <Zap className="mr-1.5 h-3.5 w-3.5 text-yellow-500" />; // default for calories
+}
+
 export function DashboardClient({ initial }: { initial: TodayData }) {
   const [data, setData] = useState(initial);
   const [foodName, setFoodName] = useState("");
   const [portion, setPortion] = useState("");
   const [busy, setBusy] = useState(false);
   const [busyPhase, setBusyPhase] = useState<
-    "identify" | "analyze" | "save" | null
+    "identify" | "analyze" | "save" | "suggest" | null
   >(null);
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [imagePipeline, setImagePipeline] = useState(false);
+  const [suggestions, setSuggestions] = useState<SuggestionCard[] | null>(null);
+  const [suggestionsBusy, setSuggestionsBusy] = useState(false);
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    align: "start", 
+    containScroll: "trimSnaps",
+    dragFree: true 
+  });
+
+  const scrollPrev = () => emblaApi && emblaApi.scrollPrev();
+  const scrollNext = () => emblaApi && emblaApi.scrollNext();
 
   const revealRef = useRef<HTMLDivElement>(null);
   const captionRef = useRef<HTMLParagraphElement>(null);
+  const suggestionBoxRef = useRef<HTMLDivElement>(null);
   const portionRef = useRef(portion);
   useEffect(() => {
     portionRef.current = portion;
   }, [portion]);
 
-  const displayExpression: AgentExpression = busy ? "thinking" : data.expression;
+  const displayExpression: AgentExpression =
+    busy || suggestionsBusy ? "thinking" : data.expression;
   const c = data.consumed;
   const t = data.targets;
 
   const agentCaption = resolveAgentCaption({
-    busy,
-    busyPhase,
+    busy: busy || suggestionsBusy,
+    busyPhase: suggestionsBusy ? "suggest" : busyPhase,
     preview: preview ? { analysis: preview.analysis } : null,
     foodName,
     portion,
     data,
   });
+
+  useLayoutEffect(() => {
+    if (suggestions && suggestionBoxRef.current) {
+      gsap.fromTo(
+        suggestionBoxRef.current,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }
+      );
+    }
+  }, [suggestions]);
 
   useLayoutEffect(() => {
     const root = revealRef.current;
@@ -214,11 +266,29 @@ export function DashboardClient({ initial }: { initial: TodayData }) {
       setPreview(null);
       setFoodName("");
       setPortion("");
+      setSuggestions(null);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not save");
     } finally {
       setBusy(false);
       setBusyPhase(null);
+    }
+  };
+
+  const handleGetSuggestions = async () => {
+    setErr(null);
+    setSuggestionsBusy(true);
+    try {
+      const res = await fetch("/api/food/suggest", {
+        method: "POST",
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error ?? "Failed to get suggestions");
+      setSuggestions(j.suggestions);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not get suggestions");
+    } finally {
+      setSuggestionsBusy(false);
     }
   };
 
@@ -264,15 +334,17 @@ export function DashboardClient({ initial }: { initial: TodayData }) {
           <div className="flex gap-6 text-sm text-[var(--app-muted)]">
             <Link
               href="/profile"
-              className="transition-colors hover:text-[var(--app-accent)]"
+              className="flex items-center gap-1.5 transition-colors hover:text-[var(--app-accent)]"
             >
+              <UserIcon className="h-4 w-4" />
               Profile
             </Link>
             <button
               type="button"
-              className="transition-colors hover:text-[var(--app-ink)]"
+              className="flex items-center gap-1.5 transition-colors hover:text-[var(--app-ink)]"
               onClick={() => signOut({ callbackUrl: "/login" })}
             >
+              <LogOut className="h-4 w-4" />
               Log out
             </button>
           </div>
@@ -352,6 +424,125 @@ export function DashboardClient({ initial }: { initial: TodayData }) {
                 />
               </div>
             </div>
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif text-xl font-medium tracking-tight text-[var(--app-ink)]">
+                Smart Suggestions
+              </h2>
+              <div className="flex items-center gap-4">
+                {suggestions && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={scrollPrev}
+                      className="rounded-full p-1.5 transition-colors hover:bg-[var(--app-line)]/50 text-[var(--app-muted)] hover:text-[var(--app-ink)]"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={scrollNext}
+                      className="rounded-full p-1.5 transition-colors hover:bg-[var(--app-line)]/50 text-[var(--app-muted)] hover:text-[var(--app-ink)]"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  disabled={suggestionsBusy || busy}
+                  onClick={() => void handleGetSuggestions()}
+                  className="text-xs font-semibold text-[var(--app-accent)] transition-colors hover:text-[var(--app-ink)] disabled:opacity-50"
+                >
+                  {suggestionsBusy ? "Mayu is thinking..." : "Ask Mayu what to eat"}
+                </button>
+              </div>
+            </div>
+
+            {suggestionsBusy && !suggestions && (
+              <div className="flex items-center justify-center rounded-2xl border border-dashed border-[var(--app-line)] py-10">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--app-accent)] border-t-transparent" />
+              </div>
+            )}
+
+            {suggestions && (
+              <div className="space-y-6">
+                <div className="overflow-hidden" ref={emblaRef}>
+                  <div className="flex gap-6">
+                    {suggestions.map((card, idx) => (
+                      <div
+                        key={idx}
+                        className="group relative flex min-w-[280px] max-w-[320px] flex-none flex-col overflow-hidden rounded-[1.5rem] bg-white/70 p-7 shadow-sm ring-1 ring-[var(--app-line)] transition-all hover:bg-white/90 hover:shadow-md sm:min-w-[320px]"
+                      >
+                        <div className="mb-5">
+                          <span className="inline-block rounded-full bg-[var(--app-accent-soft)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wider text-[var(--app-accent)]">
+                            Suggested Meal
+                          </span>
+                          <h3 className="mt-3 font-serif text-xl font-semibold tracking-tight text-[var(--app-ink)]">
+                            {card.title}
+                          </h3>
+                        </div>
+
+                        <div className="flex-1 space-y-4">
+                          <div className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-[var(--app-muted)]">
+                            What you'll need
+                          </div>
+                          <ul className="space-y-4">
+                            {card.ingredients.map((ing, iidx) => (
+                              <li key={iidx} className="flex flex-col gap-1.5">
+                                <div className="flex items-baseline justify-between text-sm">
+                                  <span className="font-medium text-[var(--app-ink)]">
+                                    {ing.name}
+                                  </span>
+                                  <span className="text-xs font-medium text-[var(--app-muted)] bg-[var(--app-line)]/30 px-1.5 py-0.5 rounded">
+                                    {ing.amount}
+                                  </span>
+                                </div>
+                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[0.7rem] text-[var(--app-muted)]/80">
+                                  {ing.macros.split(",").map((m, midx) => (
+                                    <span key={midx} className="flex items-center">
+                                      <NutrientIcon text={m} />
+                                      {m.trim()}
+                                    </span>
+                                  ))}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div className="mt-8 rounded-2xl bg-[var(--app-accent)]/[0.03] p-4 ring-1 ring-[var(--app-accent)]/10">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-[0.65rem] font-bold uppercase tracking-widest text-[var(--app-muted)]">
+                              Nutritional Impact
+                            </div>
+                            <div className="h-1.5 w-1.5 rounded-full bg-[var(--app-accent)] animate-pulse" />
+                          </div>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-bold tracking-tight text-[var(--app-accent)]">
+                            {card.totals.split(",").map((t, tidx) => (
+                              <span key={tidx} className="flex items-center">
+                                <NutrientIcon text={t} />
+                                {t.trim()}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-center pt-2">
+                  <button
+                    onClick={() => setSuggestions(null)}
+                    className="flex items-center gap-2 text-[0.7rem] font-bold uppercase tracking-[0.2em] text-[var(--app-muted)] transition-colors hover:text-[var(--app-accent)]"
+                  >
+                    <span className="h-px w-4 bg-current" />
+                    Dismiss suggestions
+                    <span className="h-px w-4 bg-current" />
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
 
           <section className="relative overflow-hidden rounded-[1.35rem] glass-panel p-6 sm:p-8">

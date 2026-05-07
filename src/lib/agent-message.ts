@@ -94,7 +94,7 @@ export function dailyGuidance(data: TodayData): string {
 
 export function resolveAgentCaption(params: {
   busy: boolean;
-  busyPhase: "identify" | "analyze" | "save" | null;
+  busyPhase: "identify" | "analyze" | "save" | "suggest" | null;
   preview: { analysis: MealAnalysis } | null;
   foodName: string;
   portion: string;
@@ -106,6 +106,9 @@ export function resolveAgentCaption(params: {
     }
     if (params.busyPhase === "save") {
       return "Saving to today's log…";
+    }
+    if (params.busyPhase === "suggest") {
+      return "Thinking of some meal ideas for you…";
     }
     return "Estimating nutrition…";
   }

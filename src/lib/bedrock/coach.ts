@@ -29,7 +29,7 @@ async function coachChatOnce(
       { role: systemAs, content: system },
       { role: "user" as const, content: user },
     ],
-    max_tokens: 1400,
+    max_tokens: 4000,
     temperature: 0.25,
   };
   

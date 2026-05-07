@@ -17,15 +17,34 @@ export const mealAnalysisSchema = z.object({
 export type MealAnalysis = z.infer<typeof mealAnalysisSchema>;
 
 export function extractJsonObject(raw: string): unknown {
-  const trimmed = raw.trim();
-  const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = fence ? fence[1]!.trim() : trimmed;
-  const start = candidate.indexOf("{");
-  const end = candidate.lastIndexOf("}");
+  let cleaned = raw.trim();
+  const fence = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) {
+    cleaned = fence[1]!.trim();
+  }
+
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
   if (start === -1 || end === -1 || end <= start) {
     throw new Error("Model did not return a JSON object.");
   }
-  return JSON.parse(candidate.slice(start, end + 1));
+
+  const jsonCandidate = cleaned.slice(start, end + 1);
+  
+  // Basic cleanup for common AI JSON mistakes:
+  // 1. Remove trailing commas before closing braces/brackets
+  const sanitized = jsonCandidate
+    .replace(/,\s*([}\]])/g, "$1")
+    // 2. Sometimes AI adds comments like // or #
+    .replace(/^\s*\/\/.*$/gm, "")
+    .replace(/^\s*#.*$/gm, "");
+
+  try {
+    return JSON.parse(sanitized);
+  } catch (e) {
+    console.error("JSON Parse Error. Cleaned string was:", sanitized);
+    throw e;
+  }
 }
 
 export function parseMealAnalysis(raw: string): MealAnalysis {
