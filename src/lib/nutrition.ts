@@ -1,4 +1,4 @@
-import type { ActivityLevel, Gender } from "@/generated/prisma/enums";
+import type { ActivityLevel, Gender, Goal } from "@/generated/prisma/enums";
 
 export type DailyNutritionTargets = {
   calories: number;
@@ -8,6 +8,7 @@ export type DailyNutritionTargets = {
   sugarMaxG: number;
   fiberMinG: number;
   sodiumMaxMg: number;
+  goal: Goal;
 };
 
 export type ConsumedTotals = {
@@ -53,6 +54,7 @@ export function computeDailyTargets(params: {
   birthDate: Date;
   gender: Gender;
   activityLevel: ActivityLevel;
+  goal: Goal;
 }): DailyNutritionTargets {
   const age = computeAge(params.birthDate);
   const bmr = computeBmr(
@@ -62,21 +64,34 @@ export function computeDailyTargets(params: {
     params.gender,
   );
   const tdee = bmr * ACTIVITY_FACTOR[params.activityLevel];
-  const proteinG = Math.round(params.weightKg * 1.2 * 10) / 10;
-  const fatKcalTarget = tdee * 0.28;
+
+  let targetCalories = tdee;
+  let proteinMultiplier = 1.2;
+
+  if (params.goal === "LOSE_WEIGHT") {
+    targetCalories = tdee - 500;
+    proteinMultiplier = 1.6;
+  } else if (params.goal === "GAIN_MUSCLE") {
+    targetCalories = tdee + 300;
+    proteinMultiplier = 2.0;
+  }
+
+  const proteinG = Math.round(params.weightKg * proteinMultiplier * 10) / 10;
+  const fatKcalTarget = targetCalories * 0.28;
   const fatG = Math.round((fatKcalTarget / 9) * 10) / 10;
   const proteinKcal = proteinG * 4;
-  const carbKcal = Math.max(0, tdee - proteinKcal - fatG * 9);
+  const carbKcal = Math.max(0, targetCalories - proteinKcal - fatG * 9);
   const carbsG = Math.round((carbKcal / 4) * 10) / 10;
 
   return {
-    calories: Math.round(tdee),
+    calories: Math.round(targetCalories),
     proteinG,
     carbsG,
     fatG,
     sugarMaxG: 50,
     fiberMinG: 28,
     sodiumMaxMg: 2300,
+    goal: params.goal,
   };
 }
 

@@ -28,6 +28,7 @@ export default async function ProfilePage() {
         weightKg: user.profile.weightKg,
         gender: user.profile.gender,
         activityLevel: user.profile.activityLevel,
+        goal: user.profile.goal,
       }}
     />
   );

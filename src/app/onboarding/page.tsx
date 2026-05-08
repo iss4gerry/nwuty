@@ -1,6 +1,6 @@
 "use client";
 
-import { ActivityLevel, Gender } from "@/generated/prisma/enums";
+import { ActivityLevel, Gender, Goal } from "@/generated/prisma/enums";
 import { FormShell } from "@/components/FormShell";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -13,6 +13,12 @@ const activityLabels: Record<ActivityLevel, string> = {
   [ActivityLevel.VERY_ACTIVE]: "Very active · heavy physical work",
 };
 
+const goalLabels: Record<Goal, string> = {
+  [Goal.LOSE_WEIGHT]: "Lose weight",
+  [Goal.MAINTAIN]: "Maintain weight",
+  [Goal.GAIN_MUSCLE]: "Gain muscle / Bulk",
+};
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [err, setErr] = useState<string | null>(null);
@@ -23,6 +29,7 @@ export default function OnboardingPage() {
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>(
     ActivityLevel.MODERATE,
   );
+  const [goal, setGoal] = useState<Goal>(Goal.MAINTAIN);
 
   const submit = async () => {
     setErr(null);
@@ -36,6 +43,7 @@ export default function OnboardingPage() {
           weightKg,
           gender,
           activityLevel,
+          goal,
         }),
       });
       const j = await res.json();
@@ -114,6 +122,21 @@ export default function OnboardingPage() {
             {(Object.keys(activityLabels) as ActivityLevel[]).map((k) => (
               <option key={k} value={k}>
                 {activityLabels[k]}
+              </option>
+            ))}
+          </select>
+        </label>
+        
+        <label className="block text-sm text-[var(--app-muted)]">
+          Goal
+          <select
+            className="input-field mt-1.5"
+            value={goal}
+            onChange={(e) => setGoal(e.target.value as Goal)}
+          >
+            {(Object.keys(goalLabels) as Goal[]).map((k) => (
+              <option key={k} value={k}>
+                {goalLabels[k]}
               </option>
             ))}
           </select>

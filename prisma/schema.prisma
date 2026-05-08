@@ -28,12 +28,19 @@ model Profile {
   gender         Gender
   birthDate      DateTime
   activityLevel  ActivityLevel
+  goal           Goal            @default(MAINTAIN)
   updatedAt      DateTime        @updatedAt
 }
 
 enum Gender {
   MALE
   FEMALE
+}
+
+enum Goal {
+  LOSE_WEIGHT
+  MAINTAIN
+  GAIN_MUSCLE
 }
 
 enum ActivityLevel {

@@ -27,9 +27,16 @@ import {
   LogOut,
   User as UserIcon,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Target
 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
+
+const goalLabels: Record<string, string> = {
+  LOSE_WEIGHT: "Lose Weight",
+  MAINTAIN: "Maintain",
+  GAIN_MUSCLE: "Gain Muscle",
+};
 
 type PreviewState = {
   analysis: MealAnalysis;
@@ -69,7 +76,8 @@ export function DashboardClient({ initial }: { initial: TodayData }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     align: "start", 
     containScroll: "trimSnaps",
-    dragFree: true 
+    dragFree: true,
+    slidesToScroll: 2
   });
 
   const scrollPrev = () => emblaApi && emblaApi.scrollPrev();
@@ -361,9 +369,15 @@ export function DashboardClient({ initial }: { initial: TodayData }) {
           ) : null}
 
           <section>
-            <h2 className="mb-5 font-serif text-xl font-medium tracking-tight text-[var(--app-ink)]">
-              Today&apos;s progress
-            </h2>
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="font-serif text-xl font-medium tracking-tight text-[var(--app-ink)]">
+                Today&apos;s progress
+              </h2>
+              <div className="flex items-center gap-2 rounded-full bg-[var(--app-accent-soft)] px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-wider text-[var(--app-accent)] ring-1 ring-[var(--app-accent)]/10">
+                <Target className="h-3 w-3" />
+                <span>Goal: {goalLabels[t.goal] ?? t.goal}</span>
+              </div>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <NutrientMeter
                 label="Calories"
@@ -472,59 +486,37 @@ export function DashboardClient({ initial }: { initial: TodayData }) {
                     {suggestions.map((card, idx) => (
                       <div
                         key={idx}
-                        className="group relative flex min-w-[280px] max-w-[320px] flex-none flex-col overflow-hidden rounded-[1.5rem] bg-white/70 p-7 shadow-sm ring-1 ring-[var(--app-line)] transition-all hover:bg-white/90 hover:shadow-md sm:min-w-[320px]"
+                        className="group relative flex min-w-[240px] max-w-[280px] flex-none flex-col overflow-hidden rounded-[1.5rem] bg-white/70 p-6 shadow-sm ring-1 ring-[var(--app-line)] transition-all hover:bg-white/90 hover:shadow-md"
                       >
-                        <div className="mb-5">
-                          <span className="inline-block rounded-full bg-[var(--app-accent-soft)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wider text-[var(--app-accent)]">
-                            Suggested Meal
-                          </span>
-                          <h3 className="mt-3 font-serif text-xl font-semibold tracking-tight text-[var(--app-ink)]">
+                        <div className="mb-4">
+                          <h3 className="font-serif text-lg font-semibold tracking-tight text-[var(--app-ink)]">
                             {card.title}
                           </h3>
+                          <p className="mt-2 text-xs leading-relaxed text-[var(--app-muted)]">
+                            {card.description}
+                          </p>
                         </div>
 
-                        <div className="flex-1 space-y-4">
-                          <div className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-[var(--app-muted)]">
-                            What you'll need
+                        <div className="mt-auto space-y-3">
+                          <div className="flex items-center justify-between border-b border-[var(--app-line)]/50 pb-2 text-xs">
+                            <span className="font-bold text-[var(--app-ink)]">
+                              {card.calories} <span className="font-normal text-[var(--app-muted)]">kcal</span>
+                            </span>
                           </div>
-                          <ul className="space-y-4">
-                            {card.ingredients.map((ing, iidx) => (
-                              <li key={iidx} className="flex flex-col gap-1.5">
-                                <div className="flex items-baseline justify-between text-sm">
-                                  <span className="font-medium text-[var(--app-ink)]">
-                                    {ing.name}
-                                  </span>
-                                  <span className="text-xs font-medium text-[var(--app-muted)] bg-[var(--app-line)]/30 px-1.5 py-0.5 rounded">
-                                    {ing.amount}
-                                  </span>
-                                </div>
-                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[0.7rem] text-[var(--app-muted)]/80">
-                                  {ing.macros.split(",").map((m, midx) => (
-                                    <span key={midx} className="flex items-center">
-                                      <NutrientIcon text={m} />
-                                      {m.trim()}
-                                    </span>
-                                  ))}
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div className="mt-8 rounded-2xl bg-[var(--app-accent)]/[0.03] p-4 ring-1 ring-[var(--app-accent)]/10">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="text-[0.65rem] font-bold uppercase tracking-widest text-[var(--app-muted)]">
-                              Nutritional Impact
+                          
+                          <div className="flex flex-wrap gap-x-4 gap-y-2">
+                            <div className="flex items-center text-[0.7rem]">
+                              <Beef className="mr-1 h-3 w-3 text-orange-600" />
+                              <span className="font-medium text-[var(--app-ink)]">{card.proteinG}g</span>
                             </div>
-                            <div className="h-1.5 w-1.5 rounded-full bg-[var(--app-accent)] animate-pulse" />
-                          </div>
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-bold tracking-tight text-[var(--app-accent)]">
-                            {card.totals.split(",").map((t, tidx) => (
-                              <span key={tidx} className="flex items-center">
-                                <NutrientIcon text={t} />
-                                {t.trim()}
-                              </span>
-                            ))}
+                            <div className="flex items-center text-[0.7rem]">
+                              <Wheat className="mr-1 h-3 w-3 text-blue-600" />
+                              <span className="font-medium text-[var(--app-ink)]">{card.carbsG}g</span>
+                            </div>
+                            <div className="flex items-center text-[0.7rem]">
+                              <Droplets className="mr-1 h-3 w-3 text-yellow-600" />
+                              <span className="font-medium text-[var(--app-ink)]">{card.fatG}g</span>
+                            </div>
                           </div>
                         </div>
                       </div>

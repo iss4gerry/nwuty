@@ -1,6 +1,6 @@
 'use client';
 
-import { ActivityLevel, Gender } from '@/generated/prisma/enums';
+import { ActivityLevel, Gender, Goal } from '@/generated/prisma/enums';
 import { FormShell } from '@/components/FormShell';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -14,6 +14,12 @@ const activityLabels: Record<ActivityLevel, string> = {
 	[ActivityLevel.VERY_ACTIVE]: 'Very active · heavy physical work',
 };
 
+const goalLabels: Record<Goal, string> = {
+	[Goal.LOSE_WEIGHT]: 'Lose weight',
+	[Goal.MAINTAIN]: 'Maintain weight',
+	[Goal.GAIN_MUSCLE]: 'Gain muscle / Bulk',
+};
+
 type Props = {
 	email: string;
 	name: string | null;
@@ -22,6 +28,7 @@ type Props = {
 		weightKg: number;
 		gender: Gender;
 		activityLevel: ActivityLevel;
+		goal: Goal;
 	};
 };
 
@@ -34,6 +41,7 @@ export function ProfileForm({ email, name: initialName, profile }: Props) {
 	const [weightKg, setWeightKg] = useState(profile.weightKg);
 	const [gender, setGender] = useState(profile.gender);
 	const [activityLevel, setActivityLevel] = useState(profile.activityLevel);
+	const [goal, setGoal] = useState(profile.goal);
 
 	const submit = async () => {
 		setErr(null);
@@ -48,6 +56,7 @@ export function ProfileForm({ email, name: initialName, profile }: Props) {
 					weightKg,
 					gender,
 					activityLevel,
+					goal,
 				}),
 			});
 			const j = await res.json();
@@ -139,6 +148,21 @@ export function ProfileForm({ email, name: initialName, profile }: Props) {
 						{(Object.keys(activityLabels) as ActivityLevel[]).map((k) => (
 							<option key={k} value={k}>
 								{activityLabels[k]}
+							</option>
+						))}
+					</select>
+				</label>
+
+				<label className="block text-sm text-[var(--app-muted)]">
+					Goal
+					<select
+						className="input-field mt-1.5"
+						value={goal}
+						onChange={(e) => setGoal(e.target.value as Goal)}
+					>
+						{(Object.keys(goalLabels) as Goal[]).map((k) => (
+							<option key={k} value={k}>
+								{goalLabels[k]}
 							</option>
 						))}
 					</select>

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { ActivityLevel, Gender } from "@/generated/prisma/enums";
+import { ActivityLevel, Gender, Goal } from "@/generated/prisma/enums";
 import { APP_TIMEZONE, DEFAULT_BIRTH_DATE_ISO } from "@/lib/app-constants";
 
 const genderSchema = z.enum([Gender.MALE, Gender.FEMALE]);
@@ -15,12 +15,15 @@ const activitySchema = z.enum([
   ActivityLevel.VERY_ACTIVE,
 ]);
 
+const goalSchema = z.enum([Goal.LOSE_WEIGHT, Goal.MAINTAIN, Goal.GAIN_MUSCLE]);
+
 const schema = z.object({
   heightCm: z.number().min(50).max(260),
   weightKg: z.number().min(20).max(400),
   gender: genderSchema,
   birthDate: z.string().optional(),
   activityLevel: activitySchema,
+  goal: goalSchema.optional(),
 });
 
 export async function POST(req: Request) {
@@ -49,6 +52,7 @@ export async function POST(req: Request) {
         gender: body.gender,
         birthDate,
         activityLevel: body.activityLevel,
+        goal: body.goal ?? Goal.MAINTAIN,
       },
       update: {
         heightCm: body.heightCm,
@@ -56,6 +60,7 @@ export async function POST(req: Request) {
         gender: body.gender,
         birthDate,
         activityLevel: body.activityLevel,
+        goal: body.goal ?? Goal.MAINTAIN,
       },
     });
 
@@ -86,6 +91,7 @@ export async function PATCH(req: Request) {
         gender: genderSchema.optional(),
         birthDate: z.string().optional(),
         activityLevel: activitySchema.optional(),
+        goal: goalSchema.optional(),
       })
       .parse(await req.json());
 
@@ -111,6 +117,7 @@ export async function PATCH(req: Request) {
       profileUpdate.birthDate = d;
     }
     if (patch.activityLevel) profileUpdate.activityLevel = patch.activityLevel;
+    if (patch.goal) profileUpdate.goal = patch.goal;
 
     if (Object.keys(profileUpdate).length) {
       try {

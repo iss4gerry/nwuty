@@ -37,7 +37,8 @@ Required fields:
 
 Use conservative estimates if unsure.`;
 
-    const userMsg = `User's daily targets:
+    const userMsg = `User's current goal: ${snap.targets.goal}
+User's daily targets:
 - Calories: ${snap.targets.calories} kcal
 - Protein: ${snap.targets.proteinG} g
 - Carbs: ${snap.targets.carbsG} g
@@ -55,7 +56,7 @@ calories ${snap.remainder.calories}, protein ${snap.remainder.proteinG}g, carbs 
 Food: ${body.foodName}
 Portion / user note: ${body.portion ?? "medium / one home-style serving"}
 
-Estimate nutrition for ONE serving and fill coachNote.`;
+Estimate nutrition for ONE serving and fill coachNote based on the user's goal.`;
 
     const raw = await invokeCoachChat(system, userMsg);
     const analysis = parseMealAnalysis(raw);

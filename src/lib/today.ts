@@ -100,6 +100,7 @@ export async function getTodaySnapshot(userId: string) {
     birthDate: user.profile.birthDate,
     gender: user.profile.gender,
     activityLevel: user.profile.activityLevel,
+    goal: user.profile.goal,
   });
 
   const logs = await prisma.foodLog.findMany({
